@@ -2,8 +2,10 @@ use actix::{prelude::*, Actor, Addr, AsyncContext, StreamHandler, Supervised};
 use actix_web_actors::ws;
 use serde_json::Value;
 
+use self::exchange::*;
 use self::join::*;
 
+mod exchange;
 mod join;
 
 pub struct ClientSession {}
@@ -25,16 +27,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClientSession {
                 let value: Value = serde_json::from_str(&text).unwrap();
                 match &value["event"] {
                     Value::String(event) if event == "join" => handle_join(value, ctx.address()),
-                    Value::String(event) if event == "offer" => {
-                        let value: Value = serde_json::from_str(&text).unwrap();
-                        println!("offer from: {}", value["from"].as_str().unwrap());
-                        ctx.text(text);
-                    }
-                    Value::String(event) if event == "answer" => {
-                        let value: Value = serde_json::from_str(&text).unwrap();
-                        println!("answer from: {}", value["from"].as_str().unwrap());
-                        ctx.text(text);
-                    }
+                    Value::String(event) if event == "offer" => handle_offer(value, ctx),
+                    Value::String(event) if event == "answer" => handle_answer(value, ctx),
                     _ => (),
                 }
             }
@@ -46,6 +40,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClientSession {
 #[derive(Default)]
 struct Room {
     members: Vec<Addr<ClientSession>>,
+}
+
+impl Room {
+    fn find_opposite_addr(&self, addr: &Addr<ClientSession>) -> Option<Addr<ClientSession>> {
+        if self.members.len() != 2 {
+            return None;
+        }
+
+        self.members.iter().find(|&e| e != addr).map(|v| v.clone())
+    }
 }
 
 impl Actor for Room {
