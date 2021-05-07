@@ -1,3 +1,4 @@
+use actix_files::Files;
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 
@@ -14,8 +15,12 @@ async fn index(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, E
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().route("/ws", web::get().to(index)))
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
+    HttpServer::new(|| {
+        App::new()
+            .route("/ws", web::get().to(index))
+            .service(Files::new("/", "./web").index_file("index.html"))
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
