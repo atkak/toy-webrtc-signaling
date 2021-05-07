@@ -89,7 +89,7 @@ impl Handler<SdpExchangeMessage> for ClientSession {
 impl Handler<SdpExchangeMessage> for Room {
     type Result = ();
 
-    fn handle(&mut self, msg: SdpExchangeMessage, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: SdpExchangeMessage, _ctx: &mut Self::Context) {
         let forward_msg = msg.clone();
         match msg {
             SdpExchangeMessage::Offer {
