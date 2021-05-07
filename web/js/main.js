@@ -2,7 +2,7 @@
 
 const username = prompt("name");
 
-const webSocket = new WebSocket("ws://localhost:8080/ws");
+const webSocket = new WebSocket("ws://127.0.0.1:8080/ws");
 
 webSocket.onmessage = async (msg) => {
   const { event, from, body } = JSON.parse(msg.data);
