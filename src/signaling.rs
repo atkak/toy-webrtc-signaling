@@ -29,6 +29,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClientSession {
                     Value::String(event) if event == "join" => handle_join(value, ctx.address()),
                     Value::String(event) if event == "offer" => handle_offer(value, ctx),
                     Value::String(event) if event == "answer" => handle_answer(value, ctx),
+                    Value::String(event) if event == "icecandidate" => {
+                        handle_icecandidate(value, ctx)
+                    }
                     _ => (),
                 }
             }
