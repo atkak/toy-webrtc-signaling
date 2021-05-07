@@ -105,8 +105,7 @@ impl Handler<RoomJoinMessage> for Room {
                     return;
                 }
 
-                let remote_addr = self.members.iter().find(|&e| e != addr_ref).unwrap();
-
+                let remote_addr = self.find_opposite_addr(addr_ref).unwrap();
                 remote_addr.do_send(RoomJoinMessage::Joined { username });
             }
             _ => (),
