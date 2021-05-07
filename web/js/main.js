@@ -62,7 +62,7 @@ const configuration = { iceServers: [{ urls: 'stun:stun.example.org' }] };
 const pc = new RTCPeerConnection(configuration);
 
 pc.onicecandidate = ({ candidate }) => {
-  webSocket.send(JSON.stringify({ event: "icecandidate", from: username, body: { candidate } }));
+  webSocket.send(JSON.stringify({ event: "icecandidate", from: username, body: candidate }));
 }
 
 pc.onnegotiationneeded = async () => {
