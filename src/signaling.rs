@@ -27,6 +27,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClientSession {
                 let value: Value = serde_json::from_str(&text).unwrap();
                 match &value["event"] {
                     Value::String(event) if event == "join" => handle_join(value, ctx.address()),
+                    Value::String(event) if event == "leave" => handle_leave(value, ctx.address()),
                     Value::String(event) if event == "offer" => handle_offer(value, ctx),
                     Value::String(event) if event == "answer" => handle_answer(value, ctx),
                     Value::String(event) if event == "icecandidate" => {

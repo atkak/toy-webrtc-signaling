@@ -18,7 +18,17 @@ pub fn handle_join(value: Value, addr: Addr<ClientSession>) {
     room_addr.do_send(msg);
 }
 
-#[derive(Message)]
+pub fn handle_leave(value: Value, addr: Addr<ClientSession>) {
+    let username = value["from"].as_str().unwrap().to_string();
+    println!("leave from: {}", username);
+
+    let msg = RoomJoinMessage::Leave { username, addr };
+
+    let room_addr = Room::from_registry();
+    room_addr.do_send(msg);
+}
+
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 enum RoomJoinMessage {
     Join {
@@ -26,6 +36,13 @@ enum RoomJoinMessage {
         addr: Addr<ClientSession>,
     },
     Joined {
+        username: String,
+    },
+    Leave {
+        username: String,
+        addr: Addr<ClientSession>,
+    },
+    Left {
         username: String,
     },
     Full,
@@ -57,6 +74,15 @@ impl Handler<RoomJoinMessage> for ClientSession {
                     "body": joined,
                 });
                 let json = serde_json::to_string(&joined_value).unwrap();
+
+                ctx.text(json);
+            }
+            RoomJoinMessage::Left { username } => {
+                let value = json!( {
+                    "event": "left",
+                    "from": username,
+                });
+                let json = serde_json::to_string(&value).unwrap();
 
                 ctx.text(json);
             }
@@ -107,6 +133,14 @@ impl Handler<RoomJoinMessage> for Room {
 
                 let remote_addr = self.find_opposite_addr(addr_ref).unwrap();
                 remote_addr.do_send(RoomJoinMessage::Joined { username });
+            }
+            RoomJoinMessage::Leave { username, addr: _ } => {
+                let msg = RoomJoinMessage::Left { username };
+                self.members
+                    .iter()
+                    .for_each(move |a| a.do_send(msg.clone()));
+
+                self.members.clear();
             }
             _ => (),
         }
