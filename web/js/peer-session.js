@@ -9,6 +9,7 @@ export default class PeerSession {
     this.webSocket = new WebSocket(signalingUrl);
     this.webSocket.onopen = this.handleOnopen.bind(this);
     this.webSocket.onmessage = this.handleOnmessage.bind(this);
+    this.webSocket.onerror = this.handleOnerror.bind(this);
 
     const configuration = { iceServers: [{ urls: 'stun:stun.example.org' }] };
     this.pc = new RTCPeerConnection(configuration);
@@ -79,6 +80,10 @@ export default class PeerSession {
         this.pc.addIceCandidate(candidate);
         break;
     }
+  }
+
+  handleOnerror(error) {
+    console.log(error);
   }
 
   async handleOnicecandidate({ candidate }) {

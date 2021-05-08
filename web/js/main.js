@@ -46,10 +46,8 @@ function handleOnclose() {
   localVideo.srcObject.getTracks().forEach(t => t.stop());
   remoteVideo.srcObject.getTracks().forEach(t => t.stop());
 
-  localVideo.removeAttribute("src");
-  localVideo.removeAttribute("srcObject");
-  remoteVideo.removeAttribute("src");
-  remoteVideo.removeAttribute("srcObject");
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
 
   peerSession = null;
 }
