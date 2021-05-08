@@ -1,6 +1,6 @@
 'use strict';
 
-const username = prompt("name");
+var username = null;
 
 const webSocket = new WebSocket("ws://127.0.0.1:8080/ws");
 
@@ -10,24 +10,14 @@ webSocket.onmessage = async (msg) => {
   switch (event) {
     case "joined":
       console.log(`${body.username} joined`);
-      if (!localVideo.srcObject) {
-        await addCameraMic();
-      }
-
-      await pc.setLocalDescription();
-      webSocket.send(JSON.stringify({ event: "offer", from: username, body: pc.localDescription }));
       break;
 
     case "offer":
       console.log(`offer from ${from}: ${body}`);
 
       await pc.setRemoteDescription(body);
-      if (!localVideo.srcObject) {
-        await addCameraMic();
-      }
-
       await pc.setLocalDescription();
-      webSocket.send(JSON.stringify({ event: "answer", from: username, body: pc.localDescription }));
+      await webSocket.send(JSON.stringify({ event: "answer", from: username, body: pc.localDescription }));
       break;
 
     case "answer":
@@ -36,8 +26,16 @@ webSocket.onmessage = async (msg) => {
       await pc.setRemoteDescription(body);
       break;
 
+    case "nomembers":
+      console.log(`nomembers in the room. waiting for the joining.`);
+      break;
+
     case "icecandidate":
       console.log(`icecandidate from ${from}: ${body}`);
+
+      if (!body) {
+        return;
+      }
 
       const candidate = new RTCIceCandidate(body);
       await pc.addIceCandidate(candidate);
@@ -50,8 +48,11 @@ const remoteVideo = document.getElementById('remoteVideo');
 
 const joinButton = document.getElementById('joinButton');
 joinButton.onclick = async () => {
+  username = document.getElementById('nameInput').textContent;
+
   try {
-    webSocket.send(JSON.stringify({ event: "join", from: username, body: { username: username } }));
+    await webSocket.send(JSON.stringify({ event: "join", from: username, body: { username: username } }));
+    await addCameraMic();
   } catch (err) {
     console.error(err);
   }
@@ -61,15 +62,15 @@ const constraints = { audio: true, video: true };
 const configuration = { iceServers: [{ urls: 'stun:stun.example.org' }] };
 const pc = new RTCPeerConnection(configuration);
 
-pc.onicecandidate = ({ candidate }) => {
-  webSocket.send(JSON.stringify({ event: "icecandidate", from: username, body: candidate }));
+pc.onicecandidate = async ({ candidate }) => {
+  await webSocket.send(JSON.stringify({ event: "icecandidate", from: username, body: candidate }));
 }
 
 pc.onnegotiationneeded = async () => {
   try {
     await pc.setLocalDescription();
 
-    signaling.send(JSON.stringify({ description: pc.localDescription }));
+    await webSocket.send(JSON.stringify({ event: "offer", from: username, body: pc.localDescription }));
   } catch (err) {
     console.error(err);
   }
